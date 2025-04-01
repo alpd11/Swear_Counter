@@ -1,5 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/friend_model.dart';
 import '../services/firebase_service.dart';
 
@@ -28,7 +28,11 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 
   Future<void> addFriend(String name, int swearCount) async {
-    final newFriend = FriendModel(uid: DateTime.now().toString(), name: name, swearCount: swearCount);
+    final newFriend = FriendModel(
+      uid: DateTime.now().toString(),
+      name: name,
+      swearCount: swearCount,
+    );
     await _firebaseService.addFriend(newFriend);
     fetchFriends();
   }
@@ -37,17 +41,44 @@ class _FriendsScreenState extends State<FriendsScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Add a Friend"),
+        backgroundColor: const Color(0xFF2B2D42),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: Text("Add a Friend", style: GoogleFonts.poppins(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: _nameController, decoration: const InputDecoration(labelText: "Name")),
-            TextField(controller: _swearCountController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Swear Count")),
+            TextField(
+              controller: _nameController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: "Name",
+                labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
+              ),
+            ),
+            TextField(
+              controller: _swearCountController,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: "Swear Count",
+                labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
+              ),
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel", style: TextStyle(color: Colors.white)),
+          ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurpleAccent),
             onPressed: () {
               addFriend(_nameController.text, int.tryParse(_swearCountController.text) ?? 0);
               _nameController.clear();
@@ -64,19 +95,44 @@ class _FriendsScreenState extends State<FriendsScreen> {
   Widget _buildCard(FriendModel friend) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [Colors.purple.shade300, Colors.deepPurple.shade400]),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))],
-      ),
-      child: ListTile(
-        leading: const CircleAvatar(backgroundColor: Colors.white, child: Icon(Icons.person, color: Colors.deepPurple)),
-        title: Text(friend.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        subtitle: Text("Swears: ${friend.swearCount}", style: const TextStyle(color: Colors.white70)),
-        trailing: Icon(
-          friend.swearCount <= 3 ? Icons.star : Icons.warning,
-          color: friend.swearCount <= 3 ? Colors.amberAccent : Colors.redAccent,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF373B44), Color(0xFF4286f4)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black38,
+            blurRadius: 10,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const CircleAvatar(
+            backgroundColor: Colors.white,
+            child: Icon(Icons.person, color: Colors.deepPurple),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(friend.name, style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Text("Swears: ${friend.swearCount}", style: GoogleFonts.poppins(color: Colors.white70)),
+              ],
+            ),
+          ),
+          Icon(
+            friend.swearCount <= 3 ? Icons.star : Icons.warning,
+            color: friend.swearCount <= 3 ? Colors.amberAccent : Colors.redAccent,
+          ),
+        ],
       ),
     );
   }
@@ -84,9 +140,15 @@ class _FriendsScreenState extends State<FriendsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: const Color(0xFF1E1E2C),
       appBar: AppBar(
-        title: const Text("Friends' Swearing Stats"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          "Friends",
+          style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(icon: const Icon(Icons.add), onPressed: _showAddFriendDialog)
         ],
@@ -94,7 +156,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: friends.isEmpty
-            ? const Center(child: Text("No friends yet. Add some!", style: TextStyle(fontSize: 18)))
+            ? Center(
+                child: Text("No friends yet. Add some!",
+                    style: GoogleFonts.poppins(fontSize: 18, color: Colors.white54)),
+              )
             : ListView(
                 children: friends.map(_buildCard).toList(),
               ),
