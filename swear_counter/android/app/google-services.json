@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "605415794165",
+    "project_id": "swear-counter-fb94b",
+    "storage_bucket": "swear-counter-fb94b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:605415794165:android:1e58b8bdcf0b8e2a376cbc",
+        "android_client_info": {
+          "package_name": "com.example.swear_counter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDzXnLp3ks4Vl1FVZ3i2pN0a1JH_T2Y7c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
