@@ -15,7 +15,7 @@ class HistoryScreen extends StatelessWidget {
         centerTitle: true,
         title: Text(
           "Swearing History",
-          style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
       body: ListView(

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/storage_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -14,7 +17,7 @@ class SettingsScreen extends StatelessWidget {
         centerTitle: true,
         title: Text(
           'Settings',
-          style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
       body: ListView(
@@ -45,9 +48,36 @@ class SettingsScreen extends StatelessWidget {
             title: Text("Reset Data", style: GoogleFonts.poppins(color: Colors.white)),
             onTap: () => _showResetDialog(context),
           ),
+          const Divider(color: Colors.white24),
+          ListTile(
+            leading: const Icon(Icons.image_outlined, color: Colors.blueAccent),
+            title: Text("Upload Profile Picture", style: GoogleFonts.poppins(color: Colors.white)),
+            onTap: () => _uploadProfilePicture(context),
+          ),
         ],
       ),
     );
+  }
+
+  void _uploadProfilePicture(BuildContext context) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final url = await StorageService().uploadProfileImage(user.uid);
+    if (url != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({'avatarUrl': url});
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("✅ Profile picture updated")),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("⚠️ Upload cancelled or failed")),
+      );
+    }
   }
 
   void _showResetDialog(BuildContext context) {

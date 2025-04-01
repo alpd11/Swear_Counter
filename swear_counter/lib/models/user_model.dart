@@ -1,31 +1,37 @@
-import 'package:swear_counter_app/models/friend_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel {
   final String uid;
-  final String name;
-  final int swearCount;
-  final List<FriendModel> friends;
+  final String email;
+  final String username;
+  final Timestamp createdAt;
+  final String? avatarUrl; // ✅ optional profile picture
 
   UserModel({
     required this.uid,
-    required this.name,
-    required this.swearCount,
-    required this.friends,
+    required this.email,
+    required this.username,
+    required this.createdAt,
+    this.avatarUrl,
   });
 
-  Map<String, dynamic> toMap() => {
-        'uid': uid,
-        'name': name,
-        'swearCount': swearCount,
-        'friends': friends.map((f) => f.toMap()).toList(),
-      };
+  Map<String, dynamic> toMap() {
+    return {
+      'uid': uid,
+      'email': email,
+      'username': username,
+      'createdAt': createdAt,
+      'avatarUrl': avatarUrl,
+    };
+  }
 
-  static UserModel fromMap(Map<String, dynamic> map) => UserModel(
-        uid: map['uid'],
-        name: map['name'],
-        swearCount: map['swearCount'],
-        friends: (map['friends'] as List)
-            .map((f) => FriendModel.fromMap(f))
-            .toList(),
-      );
+  factory UserModel.fromMap(Map<String, dynamic> map) {
+    return UserModel(
+      uid: map['uid'],
+      email: map['email'],
+      username: map['username'],
+      createdAt: map['createdAt'],
+      avatarUrl: map['avatarUrl'],
+    );
+  }
 }

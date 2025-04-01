@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:firebase_core/firebase_core.dart'; // ✅ Firebase core import
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+
 import 'providers/swear_provider.dart';
-import 'screens/app_root.dart'; // ✅ Entry point with nav bar
+import 'screens/app_root.dart';
+import 'screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,11 +42,21 @@ class SwearCounterApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return MaterialApp(
       title: 'Swear Counter',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.red),
-      home: const AppRoot(), // ✅ Main navigation + animated screens
+      theme: ThemeData(
+        primarySwatch: Colors.red,
+        scaffoldBackgroundColor: const Color(0xFF1E1E2C),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        textTheme: Theme.of(context).textTheme.apply(fontFamily: 'Poppins'),
+      ),
+      home: user == null ? const LoginScreen() : const AppRoot(),
     );
   }
 }

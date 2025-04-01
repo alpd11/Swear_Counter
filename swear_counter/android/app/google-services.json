@@ -12,7 +12,20 @@
           "package_name": "com.example.swear_counter"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "605415794165-4aafp7h4o6hvpfr1mvq49if076mnlpf4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.swear_counter",
+            "certificate_hash": "72234c848badcb3a6d6a1a40ceff96ea5cdac62c"
+          }
+        },
+        {
+          "client_id": "605415794165-pj1mtnn3moc0oi17g30mkg2oh3qq8k7h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCDzXnLp3ks4Vl1FVZ3i2pN0a1JH_T2Y7c"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "605415794165-pj1mtnn3moc0oi17g30mkg2oh3qq8k7h.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "605415794165-ukd1abv898no0clmq6eil869kqkdfp7a.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.swearCounter"
+              }
+            }
+          ]
         }
       }
     }
