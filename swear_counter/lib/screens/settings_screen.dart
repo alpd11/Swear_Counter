@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/storage_service.dart';
+import '../services/auth_service.dart';
+import 'login_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -54,9 +56,34 @@ class SettingsScreen extends StatelessWidget {
             title: Text("Upload Profile Picture", style: GoogleFonts.poppins(color: Colors.white)),
             onTap: () => _uploadProfilePicture(context),
           ),
+          const Divider(color: Colors.white24),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.redAccent),
+            title: Text("Logout", style: GoogleFonts.poppins(color: Colors.white)),
+            onTap: () => _handleLogout(context),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      await AuthService().signOut();
+      if (context.mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Logout failed: $e"), backgroundColor: Colors.redAccent),
+        );
+      }
+    }
   }
 
   void _uploadProfilePicture(BuildContext context) async {
