@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'providers/swear_provider.dart';
 import 'screens/app_root.dart';
 import 'screens/login_screen.dart';
+import 'services/background_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +28,9 @@ void main() async {
     print("❌ Could not load .env: $e");
   }
 
+  // Initialize background service
+  await BackgroundService.initializeService();
+
   runApp(
     MultiProvider(
       providers: [
@@ -45,6 +49,7 @@ class SwearCounterApp extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
 
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Swear Counter',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

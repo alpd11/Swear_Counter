@@ -1,10 +1,9 @@
-// 🌈 FINAL POLISH: SPOTIFY-INSPIRED UI WITH GORGEOUS TYPOGRAPHY
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import '../providers/swear_provider.dart';
-import '../services/speech_service.dart';
 import '../widgets/record_button.dart';
 import '../widgets/swear_chart.dart';
 
@@ -16,34 +15,39 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final SpeechService _speechService = SpeechService();
   bool isListening = false;
-  bool _ready = false;
+  final FlutterBackgroundService _backgroundService = FlutterBackgroundService();
 
   @override
   void initState() {
     super.initState();
-    _speechService.initialize((text) {
-      context.read<SwearProvider>().checkSpeech(text);
-    }).then((_) {
-      setState(() => _ready = true);
+    _setupBackgroundService();
+  }
+
+  void _setupBackgroundService() {
+    _backgroundService.on('keepForeground').listen((event) {
+      if (_backgroundService is AndroidServiceInstance) {
+        (_backgroundService as AndroidServiceInstance).setForegroundNotificationInfo(
+          title: 'Swear Counter',
+          content: 'Listening for swears...',
+        );
+      }
+    });
+
+    _backgroundService.on('transcript').listen((event) {
+      if (event != null) {
+        context.read<SwearProvider>().checkSpeech(event['text']);
+      }
     });
   }
 
   void toggleListening() {
-    if (!_ready) {
-      print("⚠️ Speech service not ready yet.");
-      return;
-    }
-
     setState(() => isListening = !isListening);
 
     if (isListening) {
-      _speechService.startListening((text) {
-        context.read<SwearProvider>().checkSpeech(text);
-      });
+      _backgroundService.invoke('keepForeground');
     } else {
-      _speechService.stopListening();
+      _backgroundService.invoke('stopService');
     }
   }
 
@@ -89,67 +93,41 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 10),
-                Text(
-                  "Detected Swear Words",
-                  style: GoogleFonts.poppins(
-                    textStyle: const TextStyle(
-                      fontSize: 20,
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(36),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFB347), Color(0xFFFF416C)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.25),
-                        blurRadius: 30,
-                        offset: const Offset(0, 10),
-                      )
+          child: Column(
+            children: [
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        swearCount.toString(),
+                        style: GoogleFonts.poppins(
+                          fontSize: 72,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Swears Detected",
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          color: Colors.white70,
+                        ),
+                      ),
                     ],
                   ),
-                  child: Text(
-                    "$swearCount",
-                    style: GoogleFonts.poppins(
-                      textStyle: const TextStyle(
-                        fontSize: 50,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
                 ),
-                const SizedBox(height: 30),
-                RecordButton(
+              ),
+              Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: RecordButton(
                   isListening: isListening,
                   onPressed: toggleListening,
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  _ready ? "Say something... and let's see 👀" : "Loading speech service...",
-                  style: GoogleFonts.poppins(
-                    textStyle: const TextStyle(fontSize: 16, color: Colors.white60),
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Expanded(child: SwearChart(swearCount: swearCount)),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
