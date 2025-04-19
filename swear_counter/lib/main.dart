@@ -9,6 +9,9 @@ import 'screens/app_root.dart';
 import 'screens/login_screen.dart';
 import 'services/background_service.dart';
 
+// Add a global navigator key for use throughout the app
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

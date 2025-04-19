@@ -45,5 +45,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need access to your microphone to detect speech for swear word counting</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>We need speech recognition to detect and count swear words in your speech</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library to select profile images</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to your camera to take profile pictures</string>
 </dict>
 </plist>

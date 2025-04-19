@@ -2,7 +2,7 @@ class FriendModel {
   final String uid;
   final String name;
   final int swearCount;
-  final String? avatarUrl; // ✅ New: optional profile image
+  final String? avatarUrl;
 
   FriendModel({
     required this.uid,
@@ -11,17 +11,21 @@ class FriendModel {
     this.avatarUrl,
   });
 
-  Map<String, dynamic> toMap() => {
-        'uid': uid,
-        'name': name,
-        'swearCount': swearCount,
-        'avatarUrl': avatarUrl,
-      };
+  Map<String, dynamic> toMap() {
+    return {
+      'uid': uid,
+      'name': name,
+      'swearCount': swearCount,
+      'avatarUrl': avatarUrl,
+    };
+  }
 
-  static FriendModel fromMap(Map<String, dynamic> map) => FriendModel(
-        uid: map['uid'],
-        name: map['name'],
-        swearCount: map['swearCount'],
-        avatarUrl: map['avatarUrl'],
-      );
+  factory FriendModel.fromMap(Map<String, dynamic> map) {
+    return FriendModel(
+      uid: map['uid'],
+      name: map['name'],
+      swearCount: map['swearCount'] ?? 0,
+      avatarUrl: map['avatarUrl'],
+    );
+  }
 }
