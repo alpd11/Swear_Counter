@@ -10,6 +10,10 @@ class SwearProvider with ChangeNotifier {
   final List<DailySwearCount> _dailyCounts = [];
   final List<WeeklySwearCount> _weeklyCounts = [];
   final _llmService = LLMService();
+  
+  // Keep track of recently processed words to avoid duplicates
+  final List<String> _recentlyProcessedTexts = [];
+  static const int _maxRecentTextsToStore = 10;
 
   int get swearCount => _swearCount;
   List<SwearCategory> get categories => _categories;
@@ -17,12 +21,61 @@ class SwearProvider with ChangeNotifier {
   List<WeeklySwearCount> get weeklyCounts => _weeklyCounts;
 
   Future<void> checkSpeech(String transcript) async {
+    // Check if this is a duplicate of recently processed text
+    if (_recentlyProcessedTexts.contains(transcript)) {
+      print('Ignoring duplicate text: "$transcript"');
+      return;
+    }
+    
+    // Add to recently processed list
+    _recentlyProcessedTexts.add(transcript);
+    if (_recentlyProcessedTexts.length > _maxRecentTextsToStore) {
+      _recentlyProcessedTexts.removeAt(0);
+    }
+    
     print('Checking speech for swears: "$transcript"');
-    final hasSwear = await _llmService.containsSwearing(transcript);
-    print('Has swear: $hasSwear');
-    if (hasSwear) {
-      _swearCount++;
-      print('Swear detected! New count: $_swearCount');
+    final swearWordCount = await _llmService.countSwearWords(transcript);
+    print('Swear word count: $swearWordCount');
+    
+    if (swearWordCount > 0) {
+      // Increment by the actual number of swear words found
+      _swearCount += swearWordCount;
+      print('Swear words detected! New count: $_swearCount');
+      
+      // Get detailed analysis for categories
+      try {
+        final analysis = await _llmService.analyzeText(transcript);
+        
+        // Update categories
+        for (var category in analysis.categories) {
+          final existingCategoryIndex = _categories.indexWhere(
+            (c) => c.category.toLowerCase() == category.category.toLowerCase()
+          );
+          
+          if (existingCategoryIndex >= 0) {
+            // Update existing category
+            final existingCategory = _categories[existingCategoryIndex];
+            _categories[existingCategoryIndex] = SwearCategory(
+              category: existingCategory.category,
+              count: existingCategory.count + category.count,
+              examples: [...existingCategory.examples, ...category.examples].toSet().toList(),
+            );
+          } else {
+            // Add new category
+            _categories.add(SwearCategory(
+              category: category.category,
+              count: category.count,
+              examples: category.examples,
+            ));
+          }
+        }
+        
+        // Add to daily counts
+        addDailyCount(swearWordCount);
+      } catch (e) {
+        print('Error updating swear categories: $e');
+      }
+      
       await saveSwearCount();
       notifyListeners();
     }
