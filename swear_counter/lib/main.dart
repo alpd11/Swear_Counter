@@ -8,6 +8,7 @@ import 'providers/swear_provider.dart';
 import 'screens/app_root.dart';
 import 'screens/login_screen.dart';
 import 'services/background_service.dart';
+import 'services/firebase_service.dart'; // Added import for FirebaseService
 
 // Add a global navigator key for use throughout the app
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -19,6 +20,16 @@ void main() async {
   try {
     await Firebase.initializeApp();
     print("✅ Firebase initialized successfully");
+    
+    // Setup auth state listener to ensure all users are saved to Firestore
+    final firebaseService = FirebaseService();
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (user != null) {
+        // Store or update user in Firestore whenever authentication state changes
+        firebaseService.createUserIfNotExists(user);
+      }
+    });
+    
   } catch (e) {
     print("❌ Firebase initialization failed: $e");
   }
@@ -49,8 +60,6 @@ class SwearCounterApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-
     return MaterialApp(
       navigatorKey: navigatorKey,
       title: 'Swear Counter',
@@ -64,7 +73,37 @@ class SwearCounterApp extends StatelessWidget {
         ),
         textTheme: Theme.of(context).textTheme.apply(fontFamily: 'Poppins'),
       ),
-      home: user == null ? const LoginScreen() : const AppRoot(),
+      home: AuthGate(),
+    );
+  }
+}
+
+// Add a stream builder to listen to auth state changes
+class AuthGate extends StatelessWidget {
+  const AuthGate({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // Show loading indicator while connection state is active
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        
+        // Check if the user is logged in
+        final user = snapshot.data;
+        if (user == null) {
+          return const LoginScreen();
+        } else {
+          return const AppRoot();
+        }
+      },
     );
   }
 }

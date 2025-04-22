@@ -15,8 +15,13 @@ class _FriendsScreenState extends State<FriendsScreen> {
   List<FriendModel> _friends = [];
   List<Map<String, dynamic>> _friendRequests = [];
   bool _isLoading = true;
+  bool _isLoadingMore = false;
   final _searchController = TextEditingController();
   List<Map<String, dynamic>> _searchResults = [];
+  bool _hasMoreSearchResults = false;
+  dynamic _lastSearchDocument;
+  String _currentSearchQuery = '';
+  bool _isEmailSearch = false;
 
   @override
   void initState() {
@@ -31,7 +36,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
     try {
       final friends = await _firebaseService.getFriends();
-      final requests = await _firebaseService.getIncomingFriendRequests();
+      final requestsStream = _firebaseService.getIncomingFriendRequests();
+      final requests = await requestsStream.first;  // Get the first emission from the Stream
 
       setState(() {
         _friends = friends;
@@ -46,41 +52,68 @@ class _FriendsScreenState extends State<FriendsScreen> {
     }
   }
 
-  Future<void> _searchUsers() async {
-    setState(() {
-      _isLoading = true;
-      _searchResults = [];
-    });
+  Future<void> _searchUsers({bool loadMore = false}) async {
+    if (loadMore) {
+      if (!_hasMoreSearchResults) return;
+      setState(() {
+        _isLoadingMore = true;
+      });
+    } else {
+      setState(() {
+        _isLoading = true;
+        _searchResults = [];
+        _lastSearchDocument = null;
+        _hasMoreSearchResults = false;
+      });
+    }
 
     try {
-      final query = _searchController.text.trim();
+      final query = loadMore ? _currentSearchQuery : _searchController.text.trim();
       if (query.isEmpty) {
         setState(() {
           _isLoading = false;
+          _isLoadingMore = false;
         });
         return;
       }
 
-      List<Map<String, dynamic>> results = [];
-      
-      // First try exact email search
-      if (query.contains('@')) {
-        results = await _firebaseService.searchUsersByEmail(query);
+      if (!loadMore) {
+        _currentSearchQuery = query;
+        _isEmailSearch = query.contains('@');
       }
 
-      // If no results or not an email, try username search
-      if (results.isEmpty) {
-        results = await _firebaseService.searchUsersByUsername(query);
+      Map<String, dynamic> resultsData;
+      
+      if (_isEmailSearch) {
+        // Email search doesn't support pagination
+        resultsData = await _firebaseService.searchUsersByEmail(query);
+      } else {
+        // Username search with pagination
+        resultsData = await _firebaseService.searchUsersByUsername(
+          query, 
+          lastDocument: loadMore ? _lastSearchDocument : null
+        );
+        
+        _lastSearchDocument = resultsData['lastDocument'];
+        _hasMoreSearchResults = resultsData['hasMore'] ?? false;
       }
+
+      final results = resultsData['users'] as List<Map<String, dynamic>>;
 
       setState(() {
-        _searchResults = results;
+        if (loadMore) {
+          _searchResults.addAll(results);
+        } else {
+          _searchResults = results;
+        }
         _isLoading = false;
+        _isLoadingMore = false;
       });
     } catch (e) {
       print('Error searching users: $e');
       setState(() {
         _isLoading = false;
+        _isLoadingMore = false;
       });
     }
   }
@@ -209,30 +242,56 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 // Search Results
                 if (_searchResults.isNotEmpty)
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: _searchResults.length,
-                      itemBuilder: (context, index) {
-                        final user = _searchResults[index];
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.deepPurpleAccent,
-                            backgroundImage: user['avatarUrl'] != null 
-                                ? NetworkImage(user['avatarUrl'])
-                                : null,
-                            child: user['avatarUrl'] == null
-                                ? Text(user['username'][0].toUpperCase(), 
-                                    style: const TextStyle(color: Colors.white))
-                                : null,
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: _searchResults.length + (_hasMoreSearchResults ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index == _searchResults.length) {
+                                // This is the loading indicator at the bottom
+                                return _isLoadingMore 
+                                  ? const Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                    )
+                                  : Center(
+                                      child: TextButton(
+                                        onPressed: () => _searchUsers(loadMore: true),
+                                        child: const Text(
+                                          'Load more results',
+                                          style: TextStyle(color: Colors.deepPurpleAccent),
+                                        ),
+                                      ),
+                                    );
+                              }
+                              
+                              final user = _searchResults[index];
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Colors.deepPurpleAccent,
+                                  backgroundImage: user['avatarUrl'] != null 
+                                      ? NetworkImage(user['avatarUrl'])
+                                      : null,
+                                  child: user['avatarUrl'] == null
+                                      ? Text(user['username'][0].toUpperCase(), 
+                                          style: const TextStyle(color: Colors.white))
+                                      : null,
+                                ),
+                                title: Text(user['username'], style: const TextStyle(color: Colors.white)),
+                                subtitle: Text(user['email'], style: const TextStyle(color: Colors.grey)),
+                                trailing: TextButton.icon(
+                                  icon: const Icon(Icons.person_add, color: Colors.deepPurpleAccent),
+                                  label: const Text('Add', style: TextStyle(color: Colors.deepPurpleAccent)),
+                                  onPressed: () => _sendFriendRequest(user['uid']),
+                                ),
+                              );
+                            },
                           ),
-                          title: Text(user['username'], style: const TextStyle(color: Colors.white)),
-                          subtitle: Text(user['email'], style: const TextStyle(color: Colors.grey)),
-                          trailing: TextButton.icon(
-                            icon: const Icon(Icons.person_add, color: Colors.deepPurpleAccent),
-                            label: const Text('Add', style: TextStyle(color: Colors.deepPurpleAccent)),
-                            onPressed: () => _sendFriendRequest(user['uid']),
-                          ),
-                        );
-                      },
+                        ),
+                      ],
                     ),
                   ),
                 

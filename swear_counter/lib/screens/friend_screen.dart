@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../models/friend_model.dart';
 import '../services/firebase_service.dart';
 
@@ -38,56 +37,88 @@ class _FriendsScreenState extends State<FriendsScreen> {
       // Sort by swear count in descending order (high to low)
       result.sort((a, b) => b.swearCount.compareTo(a.swearCount));
       
-      setState(() => _friends = result);
+      if (mounted) {
+        setState(() => _friends = result);
+      }
     } catch (e) {
-      _showErrorSnackBar('Failed to load friends: $e');
+      if (mounted) {
+        _showErrorSnackBar('Failed to load friends: $e');
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   Future<void> _searchUsers() async {
     final searchTerm = _searchController.text.trim();
     if (searchTerm.isEmpty) {
-      setState(() => _errorMessage = 'Please enter a search term');
+      if (mounted) {
+        setState(() => _errorMessage = 'Please enter a search term');
+      }
       return;
     }
     
-    setState(() {
-      _errorMessage = '';
-      _isLoading = true;
-      _searchResults = [];
-    });
+    if (mounted) {
+      setState(() {
+        _errorMessage = '';
+        _isLoading = true;
+        _searchResults = [];
+      });
+    } else {
+      return; // Exit if widget is not mounted
+    }
     
     try {
       if (_isSearchingByEmail) {
-        _searchResults = await _firebaseService.searchUsersByEmail(searchTerm);
+        var resultsData = await _firebaseService.searchUsersByEmail(searchTerm);
+        if (mounted) {
+          setState(() => _searchResults = resultsData['users'] as List<Map<String, dynamic>>);
+        }
       } else {
-        _searchResults = await _firebaseService.searchUsersByUsername(searchTerm);
+        var resultsData = await _firebaseService.searchUsersByUsername(searchTerm);
+        if (mounted) {
+          setState(() => _searchResults = resultsData['users'] as List<Map<String, dynamic>>);
+        }
       }
       
-      if (_searchResults.isEmpty) {
+      if (_searchResults.isEmpty && mounted) {
         setState(() => _errorMessage = 'No users found');
       }
     } catch (e) {
-      _showErrorSnackBar('Search failed: $e');
+      print('Search error: $e'); // Add logging for debugging
+      if (mounted) {
+        _showErrorSnackBar('Search failed: $e');
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   Future<void> _sendRequest(Map<String, dynamic> user) async {
+    if (!mounted) return;
+    
     setState(() => _isLoading = true);
     
     try {
       await _firebaseService.sendFriendRequest(user['uid']);
-      _searchController.clear();
-      Navigator.pop(context);
-      _showSuccessSnackBar('Friend request sent to ${user['username']}');
+      
+      if (mounted) {
+        _searchController.clear();
+        Navigator.pop(context);
+        _showSuccessSnackBar('Friend request sent to ${user['username']}');
+      }
     } catch (e) {
-      _showErrorSnackBar(e.toString());
+      if (mounted) {
+        _showErrorSnackBar(e.toString());
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -95,57 +126,79 @@ class _FriendsScreenState extends State<FriendsScreen> {
     setState(() => _isLoading = true);
     
     try {
-      final requests = await _firebaseService.getIncomingFriendRequests();
-      setState(() => _incomingRequests = requests);
+      final requests = await _firebaseService.getIncomingFriendRequests().first;
+      if (mounted) {
+        setState(() => _incomingRequests = requests);
+      }
     } catch (e) {
-      _showErrorSnackBar('Failed to load requests: $e');
+      if (mounted) {
+        _showErrorSnackBar('Failed to load requests: $e');
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   Future<void> _acceptRequest(Map<String, dynamic> user) async {
+    if (!mounted) return;
+    
     setState(() => _isLoading = true);
     
     try {
       await _firebaseService.acceptFriendRequest(user['uid']);
       
-      // Remove from requests list and update UI
+      if (!mounted) return;
+      
       setState(() => _incomingRequests.removeWhere((req) => req['uid'] == user['uid']));
       
-      // Refresh friends list
-      await _fetchFriends();
-      
-      _showSuccessSnackBar('${user['username']} is now your friend!');
-      
-      if (_incomingRequests.isEmpty && Navigator.canPop(context)) {
-        Navigator.pop(context);
+      // Refresh friends list only if still mounted
+      if (mounted) {
+        await _fetchFriends();
+        
+        _showSuccessSnackBar('${user['name']} is now your friend!');
+        
+        if (_incomingRequests.isEmpty && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
-      _showErrorSnackBar('Failed to accept request: $e');
+      if (mounted) {
+        _showErrorSnackBar('Failed to accept request: $e');
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
   
   Future<void> _rejectRequest(Map<String, dynamic> user) async {
+    if (!mounted) return;
+    
     setState(() => _isLoading = true);
     
     try {
       await _firebaseService.rejectFriendRequest(user['uid']);
       
-      // Remove from requests list and update UI
-      setState(() => _incomingRequests.removeWhere((req) => req['uid'] == user['uid']));
-      
-      _showSuccessSnackBar('Request rejected');
-      
-      if (_incomingRequests.isEmpty && Navigator.canPop(context)) {
-        Navigator.pop(context);
+      if (mounted) {
+        setState(() => _incomingRequests.removeWhere((req) => req['uid'] == user['uid']));
+        
+        _showSuccessSnackBar('Request rejected');
+        
+        if (_incomingRequests.isEmpty && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
-      _showErrorSnackBar('Failed to reject request: $e');
+      if (mounted) {
+        _showErrorSnackBar('Failed to reject request: $e');
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
   
@@ -155,7 +208,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
       'Are you sure you want to remove ${friend.name} from your friends?'
     );
     
-    if (!confirmed) return;
+    if (!confirmed || !mounted) return;
     
     setState(() => _isLoading = true);
     
@@ -166,23 +219,35 @@ class _FriendsScreenState extends State<FriendsScreen> {
         await _firebaseService.deleteFriend(friend.uid);
         
         // Remove from local list with animation
+        if (!mounted) return;
         final removedItem = _friends.removeAt(index);
-        _listKey.currentState?.removeItem(
-          index,
-          (context, animation) => _buildCard(removedItem, index + 1, animation),
-          duration: const Duration(milliseconds: 300),
-        );
         
-        _showSuccessSnackBar('${friend.name} removed from friends');
+        if (_listKey.currentState != null) {
+          _listKey.currentState?.removeItem(
+            index,
+            (context, animation) => _buildCard(removedItem, index + 1, animation),
+            duration: const Duration(milliseconds: 300),
+          );
+        }
+        
+        if (mounted) {
+          _showSuccessSnackBar('${friend.name} removed from friends');
+        }
       }
     } catch (e) {
-      _showErrorSnackBar('Failed to remove friend: $e');
+      if (mounted) {
+        _showErrorSnackBar('Failed to remove friend: $e');
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   void _showAddFriendDialog() {
+    if (!mounted) return;
+    
     _searchController.clear();
     _searchResults = [];
     _errorMessage = '';
@@ -354,103 +419,111 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 
   void _showRequestsDialog() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     
-    await _loadRequests();
-    
-    if (!mounted) return;
-    
-    setState(() => _isLoading = false);
-    
-    if (_incomingRequests.isEmpty) {
-      _showInfoSnackBar('No friend requests');
-      return;
-    }
-
-    showDialog(
-      context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            backgroundColor: const Color(0xFF2B2D42),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-            title: Row(
-              children: [
-                const Icon(Icons.person_add, color: Colors.white70),
-                const SizedBox(width: 8),
-                Text("Friend Requests", style: GoogleFonts.poppins(color: Colors.white)),
-              ],
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: _incomingRequests.isEmpty
-                    ? [
-                        Text(
-                          "No pending requests",
-                          style: GoogleFonts.poppins(color: Colors.white70),
-                        ),
-                      ]
-                    : _incomingRequests.map((user) => Card(
-                          color: const Color(0xFF373B44),
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              children: [
-                                ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  leading: user['avatarUrl'] != null
-                                      ? CircleAvatar(backgroundImage: NetworkImage(user['avatarUrl']))
-                                      : const CircleAvatar(child: Icon(Icons.person)),
-                                  title: Text(
-                                    user['username'],
-                                    style: GoogleFonts.poppins(color: Colors.white),
-                                  ),
-                                  subtitle: Text(
-                                    user['email'],
-                                    style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12),
-                                  ),
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    TextButton.icon(
-                                      icon: const Icon(Icons.close, color: Colors.redAccent),
-                                      label: Text("Decline", style: GoogleFonts.poppins(color: Colors.white70)),
-                                      onPressed: () async {
-                                        await _rejectRequest(user);
-                                        setDialogState(() {}); // Update dialog state
-                                      },
-                                    ),
-                                    const SizedBox(width: 8),
-                                    ElevatedButton.icon(
-                                      icon: const Icon(Icons.check),
-                                      label: Text("Accept", style: GoogleFonts.poppins()),
-                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.greenAccent),
-                                      onPressed: () async {
-                                        await _acceptRequest(user);
-                                        setDialogState(() {}); // Update dialog state
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+    try {
+      await _loadRequests();
+      
+      if (!mounted) return;
+      
+      setState(() => _isLoading = false);
+      
+      if (_incomingRequests.isEmpty) {
+        _showInfoSnackBar('No friend requests');
+        return;
+      }
+  
+      showDialog(
+        context: context,
+        builder: (_) => StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF2B2D42),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              title: Row(
+                children: [
+                  const Icon(Icons.person_add, color: Colors.white70),
+                  const SizedBox(width: 8),
+                  Text("Friend Requests", style: GoogleFonts.poppins(color: Colors.white)),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: _incomingRequests.isEmpty
+                      ? [
+                          Text(
+                            "No pending requests",
+                            style: GoogleFonts.poppins(color: Colors.white70),
                           ),
-                        )).toList(),
+                        ]
+                      : _incomingRequests.map((user) => Card(
+                            color: const Color(0xFF373B44),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                children: [
+                                  ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: user['avatarUrl'] != null
+                                        ? CircleAvatar(backgroundImage: NetworkImage(user['avatarUrl']))
+                                        : const CircleAvatar(child: Icon(Icons.person)),
+                                    title: Text(
+                                      user['username'],
+                                      style: GoogleFonts.poppins(color: Colors.white),
+                                    ),
+                                    subtitle: Text(
+                                      user['email'],
+                                      style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12),
+                                    ),
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      TextButton.icon(
+                                        icon: const Icon(Icons.close, color: Colors.redAccent),
+                                        label: Text("Decline", style: GoogleFonts.poppins(color: Colors.white70)),
+                                        onPressed: () async {
+                                          await _rejectRequest(user);
+                                          setDialogState(() {}); // Update dialog state
+                                        },
+                                      ),
+                                      const SizedBox(width: 8),
+                                      ElevatedButton.icon(
+                                        icon: const Icon(Icons.check),
+                                        label: Text("Accept", style: GoogleFonts.poppins()),
+                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.greenAccent),
+                                        onPressed: () async {
+                                          await _acceptRequest(user);
+                                          setDialogState(() {}); // Update dialog state
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )).toList(),
+                ),
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text("Close", style: GoogleFonts.poppins(color: Colors.white70)),
-              ),
-            ],
-          );
-        },
-      ),
-    );
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("Close", style: GoogleFonts.poppins(color: Colors.white70)),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showErrorSnackBar('Error loading requests: $e');
+      }
+    }
   }
 
   Widget _buildCard(FriendModel friend, int rank, Animation<double> animation) {
@@ -630,6 +703,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
   
   void _showFriendDetails(FriendModel friend) {
+    if (!mounted) return;
+    
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -697,6 +772,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
   
   void _showFriendOptions(FriendModel friend) {
+    if (!mounted) return;
+    
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF2B2D42),

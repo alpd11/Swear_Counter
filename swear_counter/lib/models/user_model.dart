@@ -6,6 +6,7 @@ class UserModel {
   final String username;
   final Timestamp createdAt;
   final String? avatarUrl; // ✅ optional profile picture
+  final int swearCount; // Add swear count field
 
   UserModel({
     required this.uid,
@@ -13,6 +14,7 @@ class UserModel {
     required this.username,
     required this.createdAt,
     this.avatarUrl,
+    this.swearCount = 0, // Default to 0
   });
 
   Map<String, dynamic> toMap() {
@@ -22,6 +24,7 @@ class UserModel {
       'username': username,
       'createdAt': createdAt,
       'avatarUrl': avatarUrl,
+      'swearCount': swearCount, // Include in map
     };
   }
 
@@ -32,6 +35,7 @@ class UserModel {
       username: map['username'],
       createdAt: map['createdAt'],
       avatarUrl: map['avatarUrl'],
+      swearCount: map['swearCount'] ?? 0, // Parse from map with default
     );
   }
 }

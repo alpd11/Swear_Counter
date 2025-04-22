@@ -18,29 +18,51 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _email = TextEditingController();
   final TextEditingController _password = TextEditingController();
   final AuthService _authService = AuthService();
+  bool _isLoading = false;
 
   void _loginWithGoogle() async {
+    setState(() => _isLoading = true);
     try {
       final user = await _authService.signInWithGoogle();
-      if (user != null) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AppRoot()));
+      if (user != null && mounted) {
+        // Let Firebase Auth state listener handle navigation
+        print("Google sign-in successful for user: ${user.displayName}");
       }
     } catch (e) {
-      _showError("Google sign-in failed: $e");
+      if (mounted) {
+        _showError("Google sign-in failed: $e");
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   void _loginWithEmail() async {
+    if (_email.text.trim().isEmpty || _password.text.isEmpty) {
+      _showError("Please enter both email and password");
+      return;
+    }
+    
+    setState(() => _isLoading = true);
     try {
       final result = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _email.text.trim(),
         password: _password.text.trim(),
       );
       if (result.user != null) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AppRoot()));
+        // Let Firebase Auth state listener handle navigation
+        print("Email sign-in successful for user: ${result.user?.email}");
       }
     } catch (e) {
-      _showError("Email sign-in failed: $e");
+      if (mounted) {
+        _showError("Email sign-in failed: $e");
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -96,29 +118,36 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 20),
 
                 // Email login button
-                ElevatedButton(
-                  onPressed: _loginWithEmail,
-                  child: const Text("Login with Email"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                  ),
-                ),
-                const SizedBox(height: 20),
+                _isLoading 
+                  ? const CircularProgressIndicator(color: Colors.deepPurple)
+                  : Column(
+                      children: [
+                        ElevatedButton(
+                          onPressed: _loginWithEmail,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
+                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                          ),
+                          child: const Text("Login with Email"),
+                        ),
+                        const SizedBox(height: 20),
 
-                // Official Google Sign-In Button
-                SignInButton(
-                  Buttons.google,
-                  onPressed: _loginWithGoogle,
-                  text: "Sign in with Google",
-                ),
+                        // Official Google Sign-In Button
+                        SignInButton(
+                          Buttons.google,
+                          onPressed: _loginWithGoogle,
+                          text: "Sign in with Google",
+                        ),
+                      ],
+                    ),
+                
                 const SizedBox(height: 16),
 
                 // Navigation to sign-up
                 TextButton(
-                  onPressed: () {
+                  onPressed: !_isLoading ? () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const SignUpScreen()));
-                  },
+                  } : null,
                   child: const Text(
                     "Don't have an account? Sign up",
                     style: TextStyle(color: Colors.white54),
