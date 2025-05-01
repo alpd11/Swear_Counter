@@ -187,6 +187,7 @@ class DebugScreen extends StatefulWidget {
 
 class _DebugScreenState extends State<DebugScreen> {
   final FirebaseService _firebaseService = FirebaseService();
+  final RealtimeDbService _realtimeDbService = RealtimeDbService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
@@ -199,17 +200,17 @@ class _DebugScreenState extends State<DebugScreen> {
   @override
   void initState() {
     super.initState();
-    _checkFirestoreStatus();
+    _checkDatabaseStatus();
   }
   
-  Future<void> _checkFirestoreStatus() async {
+  Future<void> _checkDatabaseStatus() async {
     setState(() {
       _isLoading = true;
-      _statusMessage = 'Checking Firestore status...';
+      _statusMessage = 'Checking database status...';
     });
     
     try {
-      // Check if current user exists in Firestore
+      // Check if current user exists in database
       final user = _auth.currentUser;
       if (user == null) {
         setState(() {
@@ -219,24 +220,32 @@ class _DebugScreenState extends State<DebugScreen> {
         return;
       }
       
-      // Try to get the current user's data
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
-      if (userDoc.exists) {
+      // Try to get the current user's data from Realtime DB using public method
+      final snapshot = await _realtimeDbService.getUserSnapshot(user.uid);
+      if (snapshot.exists) {
         setState(() {
-          _currentUserData = userDoc.data();
-          _statusMessage = 'User exists in Firestore';
+          _currentUserData = Map<String, dynamic>.from(snapshot.value as Map);
+          _statusMessage = 'User exists in Realtime Database';
         });
       } else {
         setState(() {
-          _statusMessage = 'User does NOT exist in Firestore!';
+          _statusMessage = 'User does NOT exist in Realtime Database!';
         });
       }
       
-      // Count total users
-      final snapshot = await _firestore.collection('users').get();
+      // Count total users using public method
+      final usersSnapshot = await _realtimeDbService.getAllUsersSnapshot();
+      final usersList = <Map<String, dynamic>>[];
+      
+      if (usersSnapshot.exists) {
+        for (final childSnapshot in usersSnapshot.children) {
+          usersList.add(Map<String, dynamic>.from(childSnapshot.value as Map));
+        }
+      }
+      
       setState(() {
-        _userCount = snapshot.docs.length;
-        _allUsers = snapshot.docs.map((doc) => doc.data()).toList();
+        _userCount = usersList.length;
+        _allUsers = usersList;
       });
       
     } catch (e) {
@@ -257,13 +266,14 @@ class _DebugScreenState extends State<DebugScreen> {
     });
     
     try {
-      final success = await _firebaseService.forceCreateCurrentUser();
+      // Use the Realtime Database service for more reliable user creation
+      final success = await _realtimeDbService.forceCreateCurrentUser();
       if (success) {
         setState(() {
-          _statusMessage = 'User created successfully!';
+          _statusMessage = 'User created successfully in Realtime Database!';
         });
         // Refresh status
-        await _checkFirestoreStatus();
+        await _checkDatabaseStatus();
       } else {
         setState(() {
           _statusMessage = 'Failed to create user';
@@ -283,17 +293,17 @@ class _DebugScreenState extends State<DebugScreen> {
   Future<void> _forceCreateUsersCollection() async {
     setState(() {
       _isLoading = true;
-      _statusMessage = 'Creating users collection...';
+      _statusMessage = 'Creating users collection in Realtime Database...';
     });
 
     try {
-      final success = await _firebaseService.forceCreateUsersCollection();
+      final success = await _realtimeDbService.forceCreateUsersCollection();
       if (success) {
         setState(() {
-          _statusMessage = 'Users collection created successfully!';
+          _statusMessage = 'Users collection created successfully in Realtime Database!';
         });
         // Refresh status
-        await _checkFirestoreStatus();
+        await _checkDatabaseStatus();
       } else {
         setState(() {
           _statusMessage = 'Failed to create users collection';
@@ -348,7 +358,7 @@ class _DebugScreenState extends State<DebugScreen> {
                             : Colors.greenAccent,
                         )),
                         const SizedBox(height: 16),
-                        Text('Total users in Firestore: $_userCount', style: GoogleFonts.poppins(color: Colors.white70)),
+                        Text('Total users in Realtime Database: $_userCount', style: GoogleFonts.poppins(color: Colors.white70)),
                       ],
                     ),
                   ),
@@ -381,7 +391,7 @@ class _DebugScreenState extends State<DebugScreen> {
                           
                         const SizedBox(height: 16),
                         
-                        Text('User in Firestore', style: GoogleFonts.poppins(
+                        Text('User in Realtime Database', style: GoogleFonts.poppins(
                           color: Colors.white, 
                           fontSize: 16,
                           fontWeight: FontWeight.bold
@@ -393,7 +403,7 @@ class _DebugScreenState extends State<DebugScreen> {
                           _infoRow('Email', _currentUserData!['email'] ?? 'Not found'),
                           _infoRow('Swear Count', '${_currentUserData!['swearCount'] ?? 0}'),
                         ] else
-                          Text('User not found in Firestore', style: GoogleFonts.poppins(color: Colors.redAccent)),
+                          Text('User not found in Realtime Database', style: GoogleFonts.poppins(color: Colors.redAccent)),
                       ],
                     ),
                   ),
@@ -420,7 +430,7 @@ class _DebugScreenState extends State<DebugScreen> {
                           backgroundColor: Colors.blueAccent,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        onPressed: _checkFirestoreStatus,
+                        onPressed: _checkDatabaseStatus,
                       ),
                     ),
                     const SizedBox(width: 8),
