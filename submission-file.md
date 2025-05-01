@@ -1,46 +1,38 @@
-<!---
-
----
-title: "CASA0017: Web Architecture Final Assessment"
-author: "Steven Gray"
-date: "10 Dec 2021"
----
-
--->
-
-# Submission Guide
-
-You will need to edit this file, create a PDF using the instructions below, from this file.   Sign it digitally and upload to Moodle
-
-## How to create a PDF from Markdown
-When finished you should export to PDF using VSCode and MarkdownPDF Extension. Make sure you select no headers and no footers in the
-extension preferences before exporting to PDF.   
-
-Upload this PDF into Moodle for submission including a copy of your presentation slides.
-
 ## Link to GitHub Repository
 
-Flutter Application Name - MY APPLICATION NAME
-GitHub Repository - [https://github.com/ucl-casa-ce/casa0015-mobile-assessment](https://github.com/ucl-casa-ce/casa0015-mobile-assessment)
+Flutter Application Name - **Swear Counter**  
+GitHub Repository - [https://github.com/alpd11/Swear_Counter](https://github.com/alpd11/Swear_Counter)
+
+---
 
 ## Introduction to Application
 
-A brief 200 word explanation of your application and it's use.  Below create a Bibliography to code, tutorial, or plugins you've used in the project. Use this guide
-for citation - [https://www.scribbr.co.uk/referencing/harvard-website-reference/](https://www.scribbr.co.uk/referencing/harvard-website-reference/)
+**Swear Counter** is a mobile app developed using Flutter and designed within the theme of Connected Environments. The application tracks and manages users' swearing habits by integrating Firebase and speech-to-text functionality alongside a Large Language Model (LLM) for contextual analysis. 
 
-## Biblography
+The app features four main sections:
+- **Home Page:** Displays the user's total swear count.
+- **History Page:** Shows statistical trends of swearing over time.
+- **Friends Page:** Allows users to add friends, view rankings, and compare stats socially.
+- **Settings Page:** Provides customization, user profile management, and debug tools.
 
-1. Last name, First initial. (Year published). Title. Edition. (Only include the edition if it is not the first edition) City published: Publisher, Page(s). <http://google.com>
+Firebase services are utilized for authentication, database storage, and profile image uploads. The app supports both Google Sign-In and email authentication. It emphasizes gamification and habit awareness, leveraging real-time feedback, intuitive UI design, and social features to promote positive behavioral change.
 
-2. Last name, First initial. (Year published). Title. Edition. (Only include the edition if it is not the first edition) City published: Publisher, Page(s).  <http://google.com>
+The app was tested across platforms and has been developed iteratively with a clear GitHub commit history, user feedback integration, and real-time database syncing.
 
-----
+---
+
+## Bibliography
+
+1. Google Developers. (n.d.). *Firebase Documentation*. Retrieved from: <https://firebase.google.com/docs>
+2. Flutter Team. (n.d.). *Flutter Documentation*. Retrieved from: <https://flutter.dev/docs>
+3. Dart Team. (n.d.). *Dart Packages*. Retrieved from: <https://pub.dev/>
+
+---
 
 ## Declaration of Authorship
 
-We, AUTHORS NAME HERE, confirm that the work presented in this assessment is my own. Where information has been derived from other sources, I confirm that this has been indicated in the work.
+I, Alp Durmusoglu, confirm that the work presented in this assessment is my own. Where information has been derived from other sources, I confirm that this has been indicated in the work.
 
+Digitally Signed: Alp Durmusoglu
 
-Digitally Sign with Your name Here
-
-ASSESSMENT DATE
+29.04.2025
