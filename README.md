@@ -1,7 +1,3 @@
-Sure! Here is a README file for your Swear Counter application:
-
----
-
 # Swear Counter
 
 Swear Counter is a Flutter application that helps users track and manage their swearing habits. It features user authentication, friend management, real-time and Firestore database integration, and a modern UI.
